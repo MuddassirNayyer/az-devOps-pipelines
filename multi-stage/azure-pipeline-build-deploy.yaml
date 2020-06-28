@@ -1,0 +1,67 @@
+trigger: 
+-  master
+
+variables:
+  # Assuming you have already Created Service Connection - AzureRM - Service Principal Auth
+  # If not please follow instructions here: https://github.com/MuddassirNayyer/CreateServiceConnection
+  azureSubscription: 'YamlPipelinesPublishApp' 
+  buildConfiguration: 'Release'
+  appName: 'testblazorapp1'
+
+stages:
+# Build Stage
+- stage: build
+  displayName: Build
+  pool:
+    vmImage: 'ubuntu-latest'
+  jobs:
+  - job: Build
+    steps:
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet restore'
+      inputs:
+        command: 'restore'
+        projects: '**/*.csproj'
+        feedsToUse: 'select'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet build'
+      inputs:
+        command: build
+        projects: '**/*.csproj'
+        arguments: '--configuration $(buildConfiguration)'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet test'
+      inputs:
+        command: test
+        projects: '**/*Tests/*.csproj'
+        arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet publish'
+      inputs:
+        command: publish
+        publishWebProjects: False
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+        zipAfterPublish: True
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+
+- stage: Deploy
+  displayName: Deploy
+  pool:
+    vmImage: 'ubuntu-latest'
+  jobs:
+  - job: Deploy
+    steps:
+    - download: current
+      artifact: 'drop'
+    - task: AzureWebApp@1
+      inputs:
+        azureSubscription: $(azureSubscription)
+        appType: 'webAppLinux'
+        appName: $(appName)
+        package: '$(Pipeline.Workspace)/**/*.zip'
