@@ -19,10 +19,6 @@ variables:
   azureSubscription: 'YamlPipelinesPublishApp' 
   appName: 'testblazorapp1'
 
-stages:
-- stage: Deploy
-  displayName: Deploy
-  
 steps:
   - download: AppArtifact
     artifact: 'drop'
