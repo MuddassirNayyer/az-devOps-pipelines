@@ -10,6 +10,9 @@ resources:
       branches:
       - master
 
+pool:
+    vmImage: 'ubuntu-latest'
+
 variables:
   # Assuming you have already Created Service Connection - AzureRM - Service Principal Auth
   # If not please follow instructions here: https://github.com/MuddassirNayyer/CreateServiceConnection
@@ -19,16 +22,13 @@ variables:
 stages:
 - stage: Deploy
   displayName: Deploy
-  pool:
-    vmImage: 'ubuntu-latest'
-  jobs:
-  - job: Deploy
-    steps:
-    - download: AppArtifact
-      artifact: 'drop'
-    - task: AzureWebApp@1
-      inputs:
-        azureSubscription: $(azureSubscription)
-        appType: 'webAppLinux'
-        appName: $(appName)
-        package: '$(Pipeline.Workspace)/**/*.zip'
+  
+steps:
+  - download: AppArtifact
+    artifact: 'drop'
+  - task: AzureWebApp@1
+    inputs:
+      azureSubscription: $(azureSubscription)
+      appType: 'webAppLinux'
+      appName: $(appName)
+      package: '$(Pipeline.Workspace)/**/*.zip'
