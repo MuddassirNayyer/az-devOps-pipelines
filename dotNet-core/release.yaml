@@ -1,0 +1,34 @@
+# Explicitly set none for repositry trigger
+trigger:
+- none
+
+resources:
+  pipelines:
+  - pipeline: AppArtifact  # Name of the pipeline resource - It could be any general name
+    source: build # Name of the triggering build pipeline
+    trigger: 
+      branches:
+      - master
+
+variables:
+  # Assuming you have already Created Service Connection - AzureRM - Service Principal Auth
+  # If not please follow instructions here: https://github.com/MuddassirNayyer/CreateServiceConnection
+  azureSubscription: 'YamlPipelinesPublishApp' 
+  appName: 'testblazorapp1'
+
+stages:
+- stage: Deploy
+  displayName: Deploy
+  pool:
+    vmImage: 'ubuntu-latest'
+  jobs:
+  - job: Deploy
+    steps:
+    - download: AppArtifact
+      artifact: 'drop'
+    - task: AzureWebApp@1
+      inputs:
+        azureSubscription: $(azureSubscription)
+        appType: 'webAppLinux'
+        appName: $(appName)
+        package: '$(Pipeline.Workspace)/**/*.zip'
